@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -14,58 +14,102 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Install dependencies
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
 
-      - name: Check secrets are configured
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
+            Write-Host "✅ requirements.txt installed"
+          }
+          else {
+            Write-Host "⚠️ requirements.txt not found"
+          }
+
+      - name: Check secrets
+        shell: pwsh
         env:
           MY_EMAIL: ${{ secrets.MY_EMAIL }}
           MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
         run: |
-          if [ -z "$MY_EMAIL" ]; then
-            echo "❌ MY_EMAIL secret is not set!"
-            exit 1
-          else
-            echo "✅ MY_EMAIL is configured"
-          fi
+          if ([string]::IsNullOrWhiteSpace($env:MY_EMAIL)) {
+              Write-Error "❌ MY_EMAIL secret is missing."
+              exit 1
+          }
+          else {
+              Write-Host "✅ MY_EMAIL secret found."
+          }
 
-          if [ -z "$MY_PASSWORD" ]; then
-            echo "❌ MY_PASSWORD secret is not set!"
-            exit 1
-          else
-            echo "✅ MY_PASSWORD is configured"
-          fi
+          if ([string]::IsNullOrWhiteSpace($env:MY_PASSWORD)) {
+              Write-Error "❌ MY_PASSWORD secret is missing."
+              exit 1
+          }
+          else {
+              Write-Host "✅ MY_PASSWORD secret found."
+          }
 
-      - name: Check required files exist
+      - name: Check required files
+        shell: pwsh
         run: |
-          echo "Checking required files..."
+          if (!(Test-Path "main.py")) {
+              Write-Error "❌ main.py not found"
+              exit 1
+          }
+          Write-Host "✅ main.py found"
 
-          test -f main.py && echo "✅ main.py found" || (echo "❌ main.py not found" && exit 1)
+          if (!(Test-Path "birthdays.csv")) {
+              Write-Error "❌ birthdays.csv not found"
+              exit 1
+          }
+          Write-Host "✅ birthdays.csv found"
 
-          test -f birthdays.csv && echo "✅ birthdays.csv found" || (echo "❌ birthdays.csv not found" && exit 1)
+          if (!(Test-Path "requirements.txt")) {
+              Write-Error "❌ requirements.txt not found"
+              exit 1
+          }
+          Write-Host "✅ requirements.txt found"
 
-          test -d letter_templates && echo "✅ letter_templates folder found" || (echo "❌ letter_templates folder not found" && exit 1)
+          if (!(Test-Path "letter_templates")) {
+              Write-Error "❌ letter_templates folder not found"
+              exit 1
+          }
+          Write-Host "✅ letter_templates folder found"
 
-      - name: Check letter templates
+      - name: Check template files
+        shell: pwsh
         run: |
-          test -f letter_templates/letter_1.txt && echo "✅ letter_1.txt found" || (echo "❌ letter_1.txt missing" && exit 1)
-          test -f letter_templates/letter_2.txt && echo "✅ letter_2.txt found" || (echo "❌ letter_2.txt missing" && exit 1)
-          test -f letter_templates/letter_3.txt && echo "✅ letter_3.txt found" || (echo "❌ letter_3.txt missing" && exit 1)
+          if (!(Test-Path "letter_templates/letter_1.txt")) {
+              Write-Error "❌ letter_1.txt missing"
+              exit 1
+          }
+          Write-Host "✅ letter_1.txt found"
+
+          if (!(Test-Path "letter_templates/letter_2.txt")) {
+              Write-Error "❌ letter_2.txt missing"
+              exit 1
+          }
+          Write-Host "✅ letter_2.txt found"
+
+          if (!(Test-Path "letter_templates/letter_3.txt")) {
+              Write-Error "❌ letter_3.txt missing"
+              exit 1
+          }
+          Write-Host "✅ letter_3.txt found"
 
       - name: Check Python syntax
+        shell: pwsh
         run: |
           python -m py_compile main.py
-          echo "✅ Python syntax is correct"
+          Write-Host "✅ Python syntax is correct"
 
       - name: Success
+        shell: pwsh
         run: |
-          echo "========================================"
-          echo "🎉 All checks passed!"
-          echo "Your Birthday Wisher project is ready."
-          echo "========================================"
+          Write-Host ""
+          Write-Host "========================================"
+          Write-Host "🎉 ALL TESTS PASSED!"
+          Write-Host "Your Birthday Wisher is ready."
+          Write-Host "========================================"
