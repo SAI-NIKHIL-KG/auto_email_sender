@@ -3,8 +3,7 @@ name: Daily Script
 on:
   schedule:
     # Runs every 5 minutes (for testing)
-    - cron: '*/5 * * * *'
-
+    - cron: '31 18 * * *'
   # Allows manual execution
   workflow_dispatch:
 
